@@ -5,6 +5,8 @@ import rgr.calculator.view.buttons.*;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class CalculatorView extends JFrame {
     private JTextField firstNumberField;
@@ -17,12 +19,23 @@ public class CalculatorView extends JFrame {
     private JButton divButton;
 
     private CalculatorController controller;
-    private String selectedOperation;
+    private Map<String, JButton> operationButtons;
+    private Map<String, Runnable> commandSetters;
 
     public CalculatorView(CalculatorController controller) {
         this.controller = controller;
-        this.selectedOperation = null;
+        initializeMaps();
         initializeUI();
+    }
+
+    private void initializeMaps() {
+        operationButtons = new HashMap<>();
+        commandSetters = new HashMap<>();
+
+        commandSetters.put("+", () -> controller.setPlusCommand());
+        commandSetters.put("-", () -> controller.setMinusCommand());
+        commandSetters.put("*", () -> controller.setMultCommand());
+        commandSetters.put("/", () -> controller.setDivCommand());
     }
 
     private void initializeUI() {
@@ -37,7 +50,7 @@ public class CalculatorView extends JFrame {
 
         resultField.setFont(new Font("Arial", Font.BOLD, 18));
         resultField.setHorizontalAlignment(JTextField.CENTER);
-        resultField.setBackground(new Color(14, 14, 14));
+        resultField.setBackground(new Color(17, 17, 17));
 
         equalsButton = new JButton("=");
         plusButton = new JButton("+");
@@ -45,8 +58,18 @@ public class CalculatorView extends JFrame {
         multButton = new JButton("*");
         divButton = new JButton("/");
 
-        // Визуально выделяем выбранную операцию
-        updateOperationButtons();
+        // Заполняем карту кнопок операций
+        operationButtons.put("+", plusButton);
+        operationButtons.put("-", minusButton);
+        operationButtons.put("*", multButton);
+        operationButtons.put("/", divButton);
+
+        // Используем ТОЛЬКО классы кнопок (убраны лямбда-выражения)
+        plusButton.addActionListener(new PlusButton(this));
+        minusButton.addActionListener(new MinusButton(this));
+        multButton.addActionListener(new MultButton(this));
+        divButton.addActionListener(new DivButton(this));
+        equalsButton.addActionListener(new EqualsButton(this));
 
         // Панель для кнопок операций
         JPanel operationPanel = new JPanel(new GridLayout(1, 4, 5, 5));
@@ -66,81 +89,44 @@ public class CalculatorView extends JFrame {
         add(new JLabel()); // Пустая ячейка для выравнивания
         add(equalsButton);
 
-        // Устанавливаем отдельные классы-обработчики для каждой кнопки
-        plusButton.addActionListener(new PlusButton(this));
-        minusButton.addActionListener(new MinusButton(this));
-        multButton.addActionListener(new MultButton(this));
-        divButton.addActionListener(new DivButton(this));
-        equalsButton.addActionListener(new EqualsButton(this));
-
         setSize(400, 350);
         setLocationRelativeTo(null);
     }
 
-    // Геттеры для доступа к полям из классов-обработчиков
-    public JTextField getFirstNumberField() {
-        return firstNumberField;
-    }
-
-    public JTextField getSecondNumberField() {
-        return secondNumberField;
-    }
-
-    public JTextField getResultField() {
-        return resultField;
-    }
-
-    public CalculatorController getController() {
-        return controller;
-    }
-
-    public String getSelectedOperation() {
-        return selectedOperation;
-    }
-
     public void setSelectedOperation(String operation) {
-        this.selectedOperation = operation;
-        updateOperationButtons();
-    }
+        // Сбрасываем подсветку всех кнопок операций
+        for (JButton button : operationButtons.values()) {
+            button.setBackground(null);
+        }
 
-    private void updateOperationButtons() {
-        // Сбрасываем цвет всех кнопок
-        plusButton.setBackground(null);
-        minusButton.setBackground(null);
-        multButton.setBackground(null);
-        divButton.setBackground(null);
+        // Подсвечиваем выбранную кнопку и устанавливаем команду
+        JButton selectedButton = operationButtons.get(operation);
+        if (selectedButton != null) {
+            selectedButton.setBackground(Color.YELLOW);
 
-        // Подсвечиваем выбранную операцию
-        if ("+".equals(selectedOperation)) {
-            plusButton.setBackground(Color.YELLOW);
-        } else if ("-".equals(selectedOperation)) {
-            minusButton.setBackground(Color.YELLOW);
-        } else if ("*".equals(selectedOperation)) {
-            multButton.setBackground(Color.YELLOW);
-        } else if ("/".equals(selectedOperation)) {
-            divButton.setBackground(Color.YELLOW);
+            Runnable commandSetter = commandSetters.get(operation);
+            if (commandSetter != null) {
+                commandSetter.run();
+            }
         }
     }
 
     public void calculate() {
-        if (selectedOperation == null) {
-            JOptionPane.showMessageDialog(this,
-                    "Сначала выберите операцию",
-                    "Ошибка",
-                    JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
         try {
             double firstNumber = Double.parseDouble(firstNumberField.getText());
             double secondNumber = Double.parseDouble(secondNumberField.getText());
 
-            double result = controller.calculate(firstNumber, secondNumber, selectedOperation);
+            double result = controller.calculate(firstNumber, secondNumber);
             resultField.setText(String.valueOf(result));
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(this,
                     "Пожалуйста, введите корректные числа",
                     "Ошибка",
+                    JOptionPane.ERROR_MESSAGE);
+        } catch (ArithmeticException ex) {
+            JOptionPane.showMessageDialog(this,
+                    ex.getMessage(),
+                    "Ошибка вычисления",
                     JOptionPane.ERROR_MESSAGE);
         }
     }
