@@ -5,35 +5,31 @@ import rgr.calculator.command.*;
 
 public class CalculatorController {
     private Calculator model;
-    private String lastOperation;
+    private Command currentCommand;
 
     public CalculatorController(Calculator model) {
         this.model = model;
+        this.currentCommand = new PlusCommand(model);
     }
-
-    public double calculate(double a, double b, String operation) {
-        this.lastOperation = operation;
-
-        switch (operation) {
-            case "+":
-                PlusCommand plusCommand = new PlusCommand(model);
-                return plusCommand.execute(a, b);
-            case "-":
-                MinusCommand minusCommand = new MinusCommand(model);
-                return minusCommand.execute(a, b);
-            case "*":
-                MultCommand multCommand = new MultCommand(model);
-                return multCommand.execute(a, b);
-            case "/":
-                DivCommand divCommand = new DivCommand(model);
-                return divCommand.execute(a, b);
-            default:
-                System.out.println("Неизвестная операция: " + operation);
-                return 0;
+    public void setPlusCommand(){
+        this.currentCommand = new PlusCommand(model);
+    }
+    public void setMinusCommand(){
+        this.currentCommand = new MinusCommand(model);
+    }
+    public void setMultCommand(){
+        this.currentCommand = new MultCommand(model);
+    }
+    public void setDivCommand(){
+        this.currentCommand = new DivCommand(model);
+    }
+    public double calculate(double a, double b){
+        if (currentCommand != null){
+            return currentCommand.execute(a, b);
+        }else {
+            System.out.println("Команда не установлена");
+            return 0;
         }
     }
-
-    public String getLastOperation() {
-        return lastOperation;
-    }
 }
+
