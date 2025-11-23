@@ -1,12 +1,11 @@
 package rgr.calculator.view;
 
+import rgr.calculator.command.*;
 import rgr.calculator.controller.CalculatorController;
 import rgr.calculator.view.buttons.*;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.HashMap;
-import java.util.Map;
 
 public class CalculatorView extends JFrame {
     private JTextField firstNumberField;
@@ -19,23 +18,10 @@ public class CalculatorView extends JFrame {
     private JButton divButton;
 
     private CalculatorController controller;
-    private Map<String, JButton> operationButtons;
-    private Map<String, Runnable> commandSetters;
 
     public CalculatorView(CalculatorController controller) {
         this.controller = controller;
-        initializeMaps();
         initializeUI();
-    }
-
-    private void initializeMaps() {
-        operationButtons = new HashMap<>();
-        commandSetters = new HashMap<>();
-
-        commandSetters.put("+", () -> controller.setPlusCommand());
-        commandSetters.put("-", () -> controller.setMinusCommand());
-        commandSetters.put("*", () -> controller.setMultCommand());
-        commandSetters.put("/", () -> controller.setDivCommand());
     }
 
     private void initializeUI() {
@@ -50,7 +36,7 @@ public class CalculatorView extends JFrame {
 
         resultField.setFont(new Font("Arial", Font.BOLD, 18));
         resultField.setHorizontalAlignment(JTextField.CENTER);
-        resultField.setBackground(new Color(17, 17, 17));
+        resultField.setBackground(new Color(14, 14, 14));
 
         equalsButton = new JButton("=");
         plusButton = new JButton("+");
@@ -58,18 +44,8 @@ public class CalculatorView extends JFrame {
         multButton = new JButton("*");
         divButton = new JButton("/");
 
-        // Заполняем карту кнопок операций
-        operationButtons.put("+", plusButton);
-        operationButtons.put("-", minusButton);
-        operationButtons.put("*", multButton);
-        operationButtons.put("/", divButton);
-
-        // Используем ТОЛЬКО классы кнопок (убраны лямбда-выражения)
-        plusButton.addActionListener(new PlusButton(this));
-        minusButton.addActionListener(new MinusButton(this));
-        multButton.addActionListener(new MultButton(this));
-        divButton.addActionListener(new DivButton(this));
-        equalsButton.addActionListener(new EqualsButton(this));
+        // Визуально выделяем выбранную операцию
+        updateOperationButtons();
 
         // Панель для кнопок операций
         JPanel operationPanel = new JPanel(new GridLayout(1, 4, 5, 5));
@@ -89,44 +65,51 @@ public class CalculatorView extends JFrame {
         add(new JLabel()); // Пустая ячейка для выравнивания
         add(equalsButton);
 
+        Command plusCommand = new PlusCommand(plusButton, resultField);
+        Command minusCommand = new MinusCommand(minusButton, resultField);
+        Command multCommand = new MultCommand(multButton, resultField);
+        Command divCommand = new DivCommand(divButton, resultField);
+
+        plusButton.addActionListener(new PlusButton(this, plusCommand));
+        minusButton.addActionListener(new MinusButton(this, minusCommand));
+        multButton.addActionListener(new MultButton(this, multCommand));
+        divButton.addActionListener(new DivButton(this, divCommand));
+        equalsButton.addActionListener(new EqualsButton(this));
+
         setSize(400, 350);
         setLocationRelativeTo(null);
     }
 
-    public void setSelectedOperation(String operation) {
-        // Сбрасываем подсветку всех кнопок операций
-        for (JButton button : operationButtons.values()) {
-            button.setBackground(null);
-        }
+    public void setSelectedOperation(Command command) {
+        updateOperationButtons();
+        controller.setCommand(command);
+    }
 
-        // Подсвечиваем выбранную кнопку и устанавливаем команду
-        JButton selectedButton = operationButtons.get(operation);
-        if (selectedButton != null) {
-            selectedButton.setBackground(Color.YELLOW);
-
-            Runnable commandSetter = commandSetters.get(operation);
-            if (commandSetter != null) {
-                commandSetter.run();
-            }
-        }
+    private void updateOperationButtons() {
+        // Сбрасываем цвет всех кнопок
+        plusButton.setBackground(null);
+        minusButton.setBackground(null);
+        multButton.setBackground(null);
+        divButton.setBackground(null);
     }
 
     public void calculate() {
+        if (controller.isNotSelectedOperation()) {
+            JOptionPane.showMessageDialog(this,
+                    "Сначала выберите операцию",
+                    "Ошибка",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
         try {
             double firstNumber = Double.parseDouble(firstNumberField.getText());
             double secondNumber = Double.parseDouble(secondNumberField.getText());
-
-            double result = controller.calculate(firstNumber, secondNumber);
-            resultField.setText(String.valueOf(result));
+            controller.calculate(firstNumber, secondNumber);
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(this,
                     "Пожалуйста, введите корректные числа",
                     "Ошибка",
-                    JOptionPane.ERROR_MESSAGE);
-        } catch (ArithmeticException ex) {
-            JOptionPane.showMessageDialog(this,
-                    ex.getMessage(),
-                    "Ошибка вычисления",
                     JOptionPane.ERROR_MESSAGE);
         }
     }

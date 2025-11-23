@@ -1,16 +1,16 @@
 package rgr.calculator.command;
 
-import rgr.calculator.model.Calculator;
+import javax.swing.*;
 
-public class MinusCommand implements Command {
-    private Calculator calculator;
+public class MinusCommand extends AbstractArithmeticCommand {
 
-    public MinusCommand(Calculator calculator){
-        this.calculator = calculator;
+    public MinusCommand(JButton minusButton, JTextField resultField) {
+        super(minusButton, resultField);
     }
 
     @Override
-    public double execute(double a, double b){
-        return calculator.minus(a, b);
+    public String calculateResultText(double a, double b) {
+        return String.valueOf(a - b);
     }
+
 }

@@ -1,16 +1,16 @@
 package rgr.calculator.command;
 
-import rgr.calculator.model.Calculator;
+import javax.swing.*;
 
-public class MultCommand implements Command {
-    private Calculator calculator;
+public class MultCommand extends AbstractArithmeticCommand {
 
-    public MultCommand(Calculator calculator){
-        this.calculator = calculator;
+    public MultCommand(JButton multButton, JTextField resultField) {
+        super(multButton, resultField);
     }
 
     @Override
-    public double execute(double a, double b){
-        return calculator.mult(a, b);
+    public String calculateResultText(double a, double b) {
+        return String.valueOf(a * b);
     }
+
 }

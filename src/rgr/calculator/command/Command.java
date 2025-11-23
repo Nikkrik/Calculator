@@ -1,5 +1,7 @@
 package rgr.calculator.command;
 
+import java.awt.event.ActionListener;
+
 public interface Command {
-    double execute(double a, double b);
+    void execute(double a, double b);
 }

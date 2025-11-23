@@ -8,15 +8,9 @@ import javax.swing.*;
 
 public class Main {
     public static void main(String[] args){
-        Calculator model = new Calculator();
-        CalculatorController controller = new CalculatorController(model);
+        CalculatorController controller = new CalculatorController();
         CalculatorView view = new CalculatorView(controller);
 
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                view.setVisible(true);
-            }
-        });
+        SwingUtilities.invokeLater(() -> view.setVisible(true));
     }
 }
